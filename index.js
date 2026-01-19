@@ -6,10 +6,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Career AI Backend is running 🚀");
-});
-
 app.post("/career", async (req, res) => {
   const { career } = req.body;
 
@@ -22,33 +18,39 @@ app.post("/career", async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini",
         messages: [
           {
+            role: "system",
+            content: "You are a career guidance expert.",
+          },
+          {
             role: "user",
-            content: `Give step by step guidance to become ${career}`
-          }
-        ]
-      })
+            content: `Give detailed career guidance for becoming a ${career}`,
+          },
+        ],
+      }),
     });
 
     const data = await response.json();
 
+    const guidance =
+      data?.choices?.[0]?.message?.content || "No guidance generated";
+
     res.json({
       career,
-      guidance: data.choices?.[0]?.message?.content || "No response"
+      guidance,
     });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "API error" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "OpenAI API failed" });
   }
 });
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log("Server running on port", PORT);
 });
